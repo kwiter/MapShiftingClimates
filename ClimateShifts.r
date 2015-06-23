@@ -1,7 +1,8 @@
 library(rgdal)
 library(raster)
 library(shapefiles)
-library(maps)
+library(plyr)
+
 
 path = "C:/Users/mck14/Dropbox"
 path ="/home/kwit/Dropbox"
@@ -9,36 +10,39 @@ path ="/home/kwit/Dropbox"
 lgm = stack(raster(paste(path,"/bioclime/cclgmbi_10m/cclgmbi1.tif",sep='')),
             raster(paste(path,"/bioclime/cclgmbi_10m/cclgmbi7.tif",sep='')),
             raster(paste(path,"/bioclime/cclgmbi_10m/cclgmbi12.tif",sep='')))
-plot(lgm)
+#plot(lgm)
 
 mid = stack(raster(paste(path,"/bioclime/ccmidbi_10m/ccmidbi1.tif",sep='')),
             raster(paste(path,"/bioclime/ccmidbi_10m/ccmidbi7.tif",sep='')),
             raster(paste(path,"/bioclime/ccmidbi_10m/ccmidbi12.tif",sep='')))
-plot(mid)
+#plot(mid)
 cur = stack(raster(paste(path,"/bioclime/bio_10m_bil/bio1.bil",sep='')),
         raster(paste(path,"/bioclime/bio_10m_bil/bio7.bil",sep='')),
         raster(paste(path,"/bioclime/bio_10m_bil/bio12.bil",sep='')))
-plot(cur)
+#plot(cur)
 
 fut50 = stack(raster(paste(path,"/bioclime/cc60bi50/cc60bi501.tif",sep='')),
             raster(paste(path,"/bioclime/cc60bi50/cc60bi507.tif",sep='')),
             raster(paste(path,"/bioclime/cc60bi50/cc60bi5012.tif",sep='')))
-plot(fut50)
+#plot(fut50)
 
 fut70 = stack(raster(paste(path,"/bioclime/cc60bi70/cc60bi701.tif",sep='')),
               raster(paste(path,"/bioclime/cc60bi70/cc60bi707.tif",sep='')),
               raster(paste(path,"/bioclime/cc60bi70/cc60bi7012.tif",sep='')))
-plot(fut70)
+#plot(fut70)
 
 all = stack(lgm,mid,cur,fut50,fut70)
 cliMat = cbind(coordinates(all),as.matrix(all))
 
 
 data.shape<-readOGR(dsn="/home/kwit/Dropbox/Shapes/cb_2014_us_state_500k",layer="cb_2014_us_state_500k")
-nc = data.shape[data.shape@data$NAME =='North Carolina',]
+allWHR= data.frame(state = character(),whr = numeric(),abund=numeric(),type=character())
+for(k in 1:length(data.shape@data$NAME)){
+
+nc = data.shape[data.shape@data$NAME ==data.shape@data$NAME[k],]
 nc <- spTransform(nc,crs(all))
 rr <- mask(all, nc)
-plot(rr)
+#plot(rr)
 NCcliMat = cbind(coordinates(rr),as.matrix(rr))#clipped raster
 
 
@@ -52,26 +56,23 @@ NCcliMat = NCcliMat[whrNC,]
 colnames(NCcliMat)[1] = 'lon'
 colnames(NCcliMat)[2] = 'lat'
 
-durham = c(-78.9072,35.9886)
-nc = map('state',"florida")
-nc = map(,'china',fill=T)
-X = nc$x
-Y = nc$y
+#durham = c(-78.9072,35.9886)
 
-whr = which.min(distance(durham,cliMat[,c(1,2)])) #one point
+#whr = which.min(distance(durham,cliMat[,c(1,2)])) #one point
 
-whr = apply(cbind(X,Y),1,function(x) which.min(distance(x,cliMat[,c(1,2)]))) #n by c(x,y) points
-whr = unique(unlist(whr))
+#whr = apply(cbind(X,Y),1,function(x) which.min(distance(x,cliMat[,c(1,2)]))) #n by c(x,y) points
+#whr = unique(unlist(whr))
 
 curP = NCcliMat[,c('bio1','bio7','bio12')]
 
 #for single point
-whrGM = which(rank(distance(curP,cliMat[,c('cclgmbi1','cclgmbi7', 'cclgmbi12')])) < 101)
-whrMH = which(rank(distance(curP,cliMat[,c('ccmidbi1','ccmidbi7', 'ccmidbi12')]))< 101)
-whr50 = which(rank(distance(curP,cliMat[,c('cc60bi501','cc60bi507', 'cc60bi5012')]))< 101)
-whr70 = which(rank(distance(curP,cliMat[,c('cc60bi701','cc60bi707', 'cc60bi7012')]))< 101)
-whrCU = which(rank(distance(curP,cliMat[,c('bio1','bio7','bio12')]))< 101)
-
+if(FALSE){
+  whrGM = which(rank(distance(curP,cliMat[,c('cclgmbi1','cclgmbi7', 'cclgmbi12')])) < 101)
+  whrMH = which(rank(distance(curP,cliMat[,c('ccmidbi1','ccmidbi7', 'ccmidbi12')]))< 101)
+  whr50 = which(rank(distance(curP,cliMat[,c('cc60bi501','cc60bi507', 'cc60bi5012')]))< 101)
+  whr70 = which(rank(distance(curP,cliMat[,c('cc60bi701','cc60bi707', 'cc60bi7012')]))< 101)
+  whrCU = which(rank(distance(curP,cliMat[,c('bio1','bio7','bio12')]))< 101)
+}
 
 whrGM = alply(curP,1,function(x) which(rank(distance(x,cliMat[,c('cclgmbi1','cclgmbi7', 'cclgmbi12')])) < 51),.progress = "text")
 whrMH = alply(curP,1,function(x) which(rank(distance(x,cliMat[,c('ccmidbi1','ccmidbi7', 'ccmidbi12')]))< 51),.progress = "text")
@@ -88,7 +89,7 @@ whrCU = table(unlist(whrCU))
 
 curP = NCcliMat[,c('cclgmbi1','cclgmbi7', 'cclgmbi12')]
 whrGMI = alply(curP,1,function(x) which(rank(distance(x,cliMat[,c('bio1','bio7','bio12')])) < 51),.progress = "text")
-curP = NCcliMat[,c('ccmidbi1','ccmidbi7', 'ccmidbi12')])]
+curP = NCcliMat[,c('ccmidbi1','ccmidbi7', 'ccmidbi12')]
 whrMHI = alply(curP,1,function(x) which(rank(distance(x,cliMat[,c('bio1','bio7','bio12')]))< 51),.progress = "text")
 curP = NCcliMat[,c('cc60bi501','cc60bi507', 'cc60bi5012')]
 whr50I = alply(curP,1,function(x) which(rank(distance(x,cliMat[,c('bio1','bio7','bio12')]))< 51),.progress = "text")
@@ -101,6 +102,16 @@ whrMHI = table(unlist(whrMHI))
 whr50I = table(unlist(whr50I))
 whr70I = table(unlist(whr70I))
 
+typeAll = c(rep('whrGM',len(whrGM)),rep('whrMH',len(whrMH)),rep('whrCU',len(whrCU)),rep('whr50',len(whr50)),rep('whr70',len(whr70)),
+rep('whrGMI',len(whrGMI)),rep('whrMHI',len(whrMHI)),rep('whr50I',len(whr50I)),rep('whr70I',len(whr70I)))
+
+whrAll = c(whrGM,whrMH,whrCU,whr50,whr70,whrGMI,whrMHI,whr50I,whr70I)
+typeAll = typeAll[whrAll > 1]
+whrAll = whrAll[whrAll > 1]
+tmp = data.frame( state = rep(data.shape@data$NAME[k],len(whrAll)),whr = names(whrAll) ,abund = whrAll, type = typeAll)
+allWHR = rbind(allWHR,tmp) 
+progress(k,55,1)
+}
 
 #all points
 #whrGM = unique(unlist(whrGM))
