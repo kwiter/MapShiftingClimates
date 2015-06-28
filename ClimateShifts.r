@@ -3,7 +3,9 @@ library(raster)
 library(shapefiles)
 library(plyr)
 library(maps)
-
+library(devtools)
+github = "https://raw.githubusercontent.com/kwiter/mckFUNCTIONS/master/mckFUNCTIONS.r"
+source_url(github)
 
 path = "C:/Users/mck14/Dropbox"
 path ="/home/kwit/Dropbox"
