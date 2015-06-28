@@ -2,6 +2,7 @@ library(rgdal)
 library(raster)
 library(shapefiles)
 library(plyr)
+library(maps)
 
 
 path = "C:/Users/mck14/Dropbox"
@@ -110,6 +111,7 @@ typeAll = typeAll[whrAll > 1]
 whrAll = whrAll[whrAll > 1]
 tmp = data.frame( state = rep(data.shape@data$NAME[k],len(whrAll)),whr = names(whrAll) ,abund = whrAll, type = typeAll)
 allWHR = rbind(allWHR,tmp) 
+saveRDS(allWHR,file = paste(path,'/MapShiftingClimates/allWHR.rds',sep="") )
 progress(k,55,1)
 }
 
@@ -135,7 +137,7 @@ points(cliMat[c(whrCU),1],cliMat[c(whrCU),2],col='purple',pch=20,cex=.75)
 
 points(NCcliMat[,1],NCcliMat[,2],cex=.1)
 
-points(cliMat[c(a.n(names(whrGM))),1],cliMat[c(a.n(names(whrGM))),2],col=groups,pch=20,cex=.4)
+points(cliMat[c(a.n(names(whrGM))),1],cliMat[c(a.n(names(whrGM))),2],col=rgb(.6,.6,.6,whrGM/max(whrGM)),pch=20,cex=.4)
 points(cliMat[c(a.n(names(whrMH))),1],cliMat[c(a.n(names(whrMH))),2],col=rgb(.6,.6,.6,whrMH/max(whrMH)),pch=20,cex=.4)
 points(cliMat[c(a.n(names(whrCU))),1],cliMat[c(a.n(names(whrCU))),2],col=groups,pch=20,cex=.4)
 points(cliMat[c(a.n(names(whr50))),1],cliMat[c(a.n(names(whr50))),2],col=rgb(.2,.2,.6,whr50/max(whr50)),pch=20,cex=.4)
